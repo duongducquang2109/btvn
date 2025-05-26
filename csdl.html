@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mô phỏng dao động đồ Lissajous</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+            color: #333;
+        }
+        .container {
+            background-color: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        .chart-container {
+            position: relative;
+            height: 500px;
+            margin-bottom: 30px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 10px;
+            background-color: white;
+        }
+        .control-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+        .control-group {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+        .control-group h3 {
+            margin-top: 0;
+            color: #1971c2;
+            border-bottom: 1px solid #dee2e6;
+            padding-bottom: 8px;
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #495057;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: all 0.3s;
+            /* Ẩn mũi tên tăng giảm */
+            -moz-appearance: textfield;
+        }
+        .input-group input::-webkit-outer-spin-button,
+        .input-group input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        .input-group input:focus {
+            border-color: #4dabf7;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(77, 171, 247, 0.2);
+        }
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 10px;
+        }
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-update {
+            background-color: #1971c2;
+            color: white;
+        }
+        .btn-update:hover {
+            background-color: #1864ab;
+        }
+        .btn-reset {
+            background-color: #e03131;
+            color: white;
+        }
+        .btn-reset:hover {
+            background-color: #c92a2a;
+        }
+        .info-box {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #f1f3f5;
+            border-radius: 8px;
+            border-left: 5px solid #1971c2;
+        }
+        .info-box h3 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+        .equation {
+            font-family: 'Courier New', monospace;
+            background-color: #e9ecef;
+            padding: 8px 12px;
+            border-radius: 4px;
+            display: inline-block;
+            margin: 5px 0;
+            font-size: 15px;
+        }
+        .tips {
+            margin-top: 15px;
+            padding: 15px;
+            background-color: #fff3bf;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>MÔ PHỎNG DAO ĐỘNG ĐỒ LISSAJOUS</h1>
+        
+        <div class="chart-container">
+            <canvas id="lissajousChart"></canvas>
+        </div>
+        
+        <div class="control-panel">
+            <div class="control-group">
+                <h3>Dao động theo trục X</h3>
+                <div class="input-group">
+                    <label for="amplitudeX">Biên độ (A):</label>
+                    <input type="number" id="amplitudeX" min="0.1" step="0.1" value="1.0">
+                </div>
+                <div class="input-group">
+                    <label for="frequencyX">Tần số (a):</label>
+                    <input type="number" id="frequencyX" min="0.1" step="0.1" value="1.0">
+                </div>
+                <div class="input-group">
+                    <label for="phaseX">Góc pha (φ₁) - rad:</label>
+                    <input type="number" id="phaseX" step="0.01" value="0.0">
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <h3>Dao động theo trục Y</h3>
+                <div class="input-group">
+                    <label for="amplitudeY">Biên độ (B):</label>
+                    <input type="number" id="amplitudeY" min="0.1" step="0.1" value="1.0">
+                </div>
+                <div class="input-group">
+                    <label for="frequencyY">Tần số (b):</label>
+                    <input type="number" id="frequencyY" min="0.1" step="0.1" value="2.0">
+                </div>
+                <div class="input-group">
+                    <label for="phaseY">Góc pha (φ₂) - rad:</label>
+                    <input type="number" id="phaseY" step="0.01" value="0.0">
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <h3>Cài đặt đồ thị</h3>
+                <div class="input-group">
+                    <label for="numPoints">Số điểm vẽ:</label>
+                    <input type="number" id="numPoints" min="100" step="100" value="1000">
+                </div>
+                <div class="input-group">
+                    <label for="lineWidth">Độ dày đường:</label>
+                    <input type="number" id="lineWidth" min="0.5" max="5" step="0.1" value="1.5">
+                </div>
+                <div class="input-group">
+                    <label for="timeDuration">Thời gian (t):</label>
+                    <input type="number" id="timeDuration" min="1" max="20" step="1" value="2">
+                    <small>Chu kỳ (2π)</small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="button-group">
+            <button id="updateBtn" class="btn btn-update">
+                <span style="margin-right: 8px;">🔄</span> CẬP NHẬT ĐỒ THỊ
+            </button>
+            <button id="resetBtn" class="btn btn-reset">
+                <span style="margin-right: 8px;">↩️</span> THIẾT LẬP LẠI
+            </button>
+        </div>
+        
+    </div>
+
+    <script>
+        // Khởi tạo biểu đồ
+        const ctx = document.getElementById('lissajousChart').getContext('2d');
+        const chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                datasets: [{
+                    label: 'Đồ Lissajous',
+                    borderColor: '#1971c2',
+                    backgroundColor: 'rgba(25, 113, 194, 0.1)',
+                    borderWidth: 1.5,
+                    pointRadius: 0,
+                    fill: false,
+                    data: [],
+                    tension: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        type: 'linear',
+                        position: 'center',
+                        title: {
+                            display: true,
+                            text: 'x(t) = A × sin(a×t + φ₁)',
+                            font: {
+                                weight: 'bold'
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(0,0,0,0.05)'
+                        },
+                        min: -2,
+                        max: 2
+                    },
+                    y: {
+                        type: 'linear',
+                        position: 'center',
+                        title: {
+                            display: true,
+                            text: 'y(t) = B × sin(b×t + φ₂)',
+                            font: {
+                                weight: 'bold'
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(0,0,0,0.05)'
+                        },
+                        min: -2,
+                        max: 2
+                    }
+                },
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Đồ thị Lissajous: A=1.0, B=1.0, a=1.0, b=2.0, φ₁=0.0, φ₂=0.0',
+                        font: {
+                            size: 16
+                        },
+                        padding: {
+                            top: 10,
+                            bottom: 20
+                        }
+                    },
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `(${context.parsed.x.toFixed(2)}, ${context.parsed.y.toFixed(2)})`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Lấy các phần tử DOM
+        const amplitudeX = document.getElementById('amplitudeX');
+        const amplitudeY = document.getElementById('amplitudeY');
+        const frequencyX = document.getElementById('frequencyX');
+        const frequencyY = document.getElementById('frequencyY');
+        const phaseX = document.getElementById('phaseX');
+        const phaseY = document.getElementById('phaseY');
+        const numPoints = document.getElementById('numPoints');
+        const lineWidth = document.getElementById('lineWidth');
+        const timeDuration = document.getElementById('timeDuration');
+        const updateBtn = document.getElementById('updateBtn');
+        const resetBtn = document.getElementById('resetBtn');
+
+        // Hàm cập nhật đồ thị
+        function updateChart() {
+            // Lấy giá trị từ input
+            const A = parseFloat(amplitudeX.value) || 1.0;
+            const B = parseFloat(amplitudeY.value) || 1.0;
+            const a = parseFloat(frequencyX.value) || 1.0;
+            const b = parseFloat(frequencyY.value) || 2.0;
+            const φ1 = parseFloat(phaseX.value) || 0.0;
+            const φ2 = parseFloat(phaseY.value) || 0.0;
+            const points = parseInt(numPoints.value) || 1000;
+            const width = parseFloat(lineWidth.value) || 1.5;
+            const duration = parseInt(timeDuration.value) || 2;
+            
+            // Tạo dữ liệu
+            const data = [];
+            for (let i = 0; i < points; i++) {
+                const t = (duration * 2 * Math.PI * i) / points;
+                data.push({
+                    x: A * Math.sin(a * t + φ1),
+                    y: B * Math.sin(b * t + φ2)
+                });
+            }
+            
+            // Cập nhật biểu đồ
+            chart.data.datasets[0].data = data;
+            chart.data.datasets[0].borderWidth = width;
+            
+            // Điều chỉnh tỉ lệ trục
+            const maxAxis = Math.max(A, B) * 1.2;
+            chart.options.scales.x.min = -maxAxis;
+            chart.options.scales.x.max = maxAxis;
+            chart.options.scales.y.min = -maxAxis;
+            chart.options.scales.y.max = maxAxis;
+            
+            // Cập nhật tiêu đề
+            chart.options.plugins.title.text = 
+                `Đồ thị Lissajous: A=${A.toFixed(1)}, B=${B.toFixed(1)}, a=${a.toFixed(1)}, b=${b.toFixed(1)}, φ₁=${φ1.toFixed(2)}, φ₂=${φ2.toFixed(2)}`;
+            
+            chart.update();
+        }
+
+        // cập nhật 
+        updateBtn.addEventListener('click', updateChart);
+        
+        // input
+        document.querySelectorAll('input').forEach(input => {
+            input.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') updateChart();
+            });
+        });
+
+        // reset
+        resetBtn.addEventListener('click', () => {
+            amplitudeX.value = '1.0';
+            amplitudeY.value = '1.0';
+            frequencyX.value = '1.0';
+            frequencyY.value = '2.0';
+            phaseX.value = '0.0';
+            phaseY.value = '0.0';
+            numPoints.value = '1000';
+            lineWidth.value = '1.5';
+            timeDuration.value = '2';
+            updateChart();
+        });
+
+        // Khởi tạo đồ thị ban đầu
+        updateChart();
+    </script>
+</body>
+</html>
